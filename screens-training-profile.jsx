@@ -728,6 +728,177 @@ function GameWordChains() {
   );
 }
 
+// --- SHEEESH Rush (easter egg game) ---
+function GameSheeesh() {
+  const [phase, setPhase] = React.useState("idle");  // idle | playing | over
+  const [timeLeft, setTimeLeft] = React.useState(30);
+  const [score, setScore] = React.useState(0);
+  const [combo, setCombo] = React.useState(0);
+  const [bestCombo, setBestCombo] = React.useState(0);
+  const [words, setWords] = React.useState([]);       // {id, text, isTarget, x, fall, born}
+  const [pops, setPops] = React.useState([]);         // ephemeral +100 / -50 toasters
+  const wordIdRef = React.useRef(0);
+  const popIdRef  = React.useRef(0);
+
+  const DECOYS = ["WOW","OMG","YEET","BRUH","DANG","NICE","WHOA","DAMN","LOL","HUH","OOF","SHESH","SHEEEEESH"];
+  // Note: "SHEEEEESH" is 5 E's; we accept 3–4 E's as targets only.
+  const isSheeesh = (t) => /^SHE{3,4}SH$/.test(t);
+  const TARGETS = ["SHEEESH","SHEEESH","SHEEEESH"];
+
+  const spawn = () => {
+    const isTarget = Math.random() < 0.35;
+    const text = isTarget
+      ? TARGETS[Math.floor(Math.random() * TARGETS.length)]
+      : DECOYS[Math.floor(Math.random() * DECOYS.length)];
+    // Decoy "SHEEEEESH" (5 E's) is deliberately off-target to trap misclicks.
+    const x = 10 + Math.random() * 80;
+    const fall = 3.2 + Math.random() * 1.3; // seconds to fall
+    setWords(ws => [...ws, { id: ++wordIdRef.current, text, isTarget, x, fall }]);
+  };
+
+  // spawn loop
+  React.useEffect(() => {
+    if (phase !== "playing") return;
+    const id = setInterval(spawn, 650);
+    return () => clearInterval(id);
+  }, [phase]);
+
+  // 1s countdown
+  React.useEffect(() => {
+    if (phase !== "playing") return;
+    const id = setInterval(() => {
+      setTimeLeft(t => {
+        if (t <= 1) { setPhase("over"); return 0; }
+        return t - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [phase]);
+
+  const removeWord = (id) => setWords(ws => ws.filter(w => w.id !== id));
+
+  const addPop = (x, text, color) => {
+    const id = ++popIdRef.current;
+    setPops(ps => [...ps, { id, x, text, color }]);
+    setTimeout(() => setPops(ps => ps.filter(p => p.id !== id)), 700);
+  };
+
+  const clickWord = (w, e) => {
+    e && e.stopPropagation && e.stopPropagation();
+    removeWord(w.id);
+    if (isSheeesh(w.text)) {
+      const gained = 100 + combo * 20;
+      setScore(s => s + gained);
+      setCombo(c => {
+        const n = c + 1;
+        setBestCombo(b => Math.max(b, n));
+        return n;
+      });
+      addPop(w.x, `+${gained}`, "var(--accent)");
+    } else {
+      setScore(s => Math.max(0, s - 50));
+      setCombo(0);
+      addPop(w.x, "−50", W.coral);
+    }
+  };
+
+  const onWordFell = (w) => {
+    if (isSheeesh(w.text)) {
+      setScore(s => Math.max(0, s - 20));
+      setCombo(0);
+      addPop(w.x, "missed", W.coral);
+    }
+    removeWord(w.id);
+  };
+
+  const start = () => {
+    setScore(0); setTimeLeft(30); setWords([]); setCombo(0); setBestCombo(0); setPops([]);
+    setPhase("playing");
+  };
+
+  const rating = score >= 2500 ? "MAX SHEEESH"
+               : score >= 1500 ? "PRETTY SHEEESH"
+               : score >= 800  ? "MILD SHEEESH"
+               :                 "NO SHEEESH";
+  const fires = score >= 2500 ? "🔥🔥🔥" : score >= 1500 ? "🔥🔥" : score >= 800 ? "🔥" : "💤";
+
+  return (
+    <GameShell title="sheeesh rush · hidden" round={phase === "playing" ? `${30 - timeLeft}s / 30s` : "—"} score={score} streak={combo}>
+      {phase === "idle" && (
+        <div style={{ textAlign:"center", maxWidth: 520, padding: 20 }}>
+          <div className="w-serif" style={{ fontSize: 72, lineHeight: 1, fontStyle: "italic", color:"var(--accent)", letterSpacing: "-0.02em", textShadow:"0 0 40px var(--accent-glow)" }}>
+            SHEEESH
+          </div>
+          <div className="w-mono" style={{ fontSize: 10, color: W.mutedDim, letterSpacing:"0.2em", textTransform:"uppercase", marginTop: 6 }}>
+            hidden · easter egg · cognitive discrimination drill
+          </div>
+          <p style={{ color: W.muted, marginTop: 20, marginBottom: 24, fontSize: 15, lineHeight: 1.55 }}>
+            Words drop from above. Tap only <span style={{color:"var(--accent)", fontFamily: W.mono}}>SHEEESH</span>.
+            Ignore the decoys (and watch out for <span className="w-mono" style={{color: W.muted}}>SHEEEEESH</span>
+            — that's five E's, not the real thing). 30 seconds. Combo to score harder.
+          </p>
+          <button className="w-btn w-btn-primary" onClick={start}><Icons.play/> start</button>
+        </div>
+      )}
+
+      {phase === "playing" && (
+        <div style={{
+          position:"relative", width: "100%", maxWidth: 720, height: 520,
+          background: W.bgSunken, border: `1px solid ${W.line}`, overflow:"hidden",
+        }}>
+          <div style={{ position:"absolute", top: 10, left: 12, fontFamily: W.mono, fontSize: 12, color: W.muted, zIndex: 3 }}>
+            <span style={{ color:"var(--accent)" }}>{timeLeft}s</span> · combo ×{combo}
+          </div>
+          <div style={{ position:"absolute", top: 10, right: 12, fontFamily: W.mono, fontSize: 12, color: W.muted, zIndex: 3 }}>
+            score <span style={{ color:"var(--accent)", fontSize: 14 }}>{score}</span>
+          </div>
+          {words.map(w => (
+            <div key={w.id}
+              onClick={(e) => clickWord(w, e)}
+              onAnimationEnd={() => onWordFell(w)}
+              style={{
+                position:"absolute", left: `${w.x}%`, top: 0,
+                animation: `w-fall ${w.fall}s linear forwards`,
+                fontFamily: W.mono, fontSize: 24, fontWeight: 600,
+                color: isSheeesh(w.text) ? "var(--accent)" : W.muted,
+                cursor:"pointer", padding: "6px 12px", userSelect:"none", whiteSpace:"nowrap",
+                textShadow: isSheeesh(w.text) ? "0 0 20px var(--accent-glow)" : "none",
+              }}>
+              {w.text}
+            </div>
+          ))}
+          {pops.map(p => (
+            <div key={p.id} style={{
+              position:"absolute", left: `${p.x}%`, top: "60%",
+              fontFamily: W.mono, fontSize: 20, fontWeight: 600, color: p.color,
+              animation: "w-pop 0.7s ease-out forwards",
+              pointerEvents:"none", whiteSpace:"nowrap",
+            }}>
+              {p.text}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {phase === "over" && (
+        <div style={{ textAlign:"center", padding: 32, border: `1px solid var(--accent)`, background:"var(--accent-bg)", maxWidth: 520, width: "100%" }}>
+          <div style={{ fontSize: 48 }}>{fires}</div>
+          <div className="w-serif" style={{ fontSize: 40, color:"var(--accent)", marginTop: 6, letterSpacing:"-0.02em" }}>
+            {rating}
+          </div>
+          <div className="w-mono" style={{ fontSize: 14, color: W.muted, marginTop: 8 }}>
+            {score} pts · best combo ×{bestCombo}
+          </div>
+          <div style={{ display:"flex", gap: 10, justifyContent:"center", marginTop: 24, flexWrap:"wrap" }}>
+            <button className="w-btn w-btn-primary" onClick={start}><Icons.play/> run it back</button>
+            <button className="w-btn w-btn-ghost" onClick={() => window.nav && window.nav("/today")}>exit</button>
+          </div>
+        </div>
+      )}
+    </GameShell>
+  );
+}
+
 function GameShell({ title, round, score, streak, children }) {
   return (
     <div className="w-grid-bg" style={{ height:"100%", display:"flex", flexDirection:"column" }}>
@@ -1007,4 +1178,4 @@ function ArticleNeuroplasticity() {
   );
 }
 
-Object.assign(window, { AppShell, Today, Profile, Training, Library, ArticleNeuroplasticity, GameMemoryGrid, GameReactionTime, GameWordChains });
+Object.assign(window, { AppShell, Today, Profile, Training, Library, ArticleNeuroplasticity, GameMemoryGrid, GameReactionTime, GameWordChains, GameSheeesh });

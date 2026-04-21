@@ -89,6 +89,9 @@ const W = {
     .w-link { color: var(--accent); text-decoration: none; border-bottom: 1px dashed var(--accent-line, ${W.hair}); }
     .w-pulse { animation: w-pulse 1.6s ease-in-out infinite; }
     @keyframes w-pulse { 0%,100%{opacity:.4} 50%{opacity:1} }
+    @keyframes w-fall { from { transform: translate(-50%, 0); } to { transform: translate(-50%, 520px); } }
+    @keyframes w-pop  { 0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+                       100% { transform: translate(-50%, -50%) scale(2.4); opacity: 0; } }
   `;
   document.head.appendChild(s);
 })();

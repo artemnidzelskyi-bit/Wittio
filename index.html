@@ -49,6 +49,24 @@ window.nav = (path) => {
   window.scrollTo(0, 0);
 };
 
+// ── SHEEESH easter egg: typing "SHEEESH" anywhere routes to the hidden game ──
+function useSheeeshHotkey() {
+  React.useEffect(() => {
+    let buf = "";
+    const onKey = (e) => {
+      if (e.target && ["INPUT","TEXTAREA"].includes(e.target.tagName)) return;
+      if (!e.key || !/^[a-zA-Z]$/.test(e.key)) return;
+      buf = (buf + e.key.toUpperCase()).slice(-12);
+      if (/SHE{2,}SH/.test(buf)) {
+        buf = "";
+        window.nav("/games/sheesh");
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+}
+
 // ── IQ test questions ───────────────────────────────────────
 const QUESTIONS = [
   {
@@ -484,6 +502,7 @@ function NotFound({ path }) {
 // ── App / Router ─────────────────────────────────────────────
 function App() {
   const route = useHashRoute();
+  useSheeeshHotkey();
   const [qIdx, setQIdx] = React.useState(0);
   const [answers, setAnswers] = React.useState({}); // { q1: "b", q2: "c", ... }
 
@@ -571,6 +590,8 @@ function App() {
     screen = <GameReactionTime/>;
   } else if (route === "/games/words") {
     screen = <GameWordChains/>;
+  } else if (route === "/games/sheesh") {
+    screen = <GameSheeesh/>;
   } else {
     screen = <NotFound path={route}/>;
   }

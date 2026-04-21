@@ -16,8 +16,21 @@ function WittioMark({ size = 22, accent }) {
 }
 
 function WittioLogo({ size = 20, accent, text = "wittio" }) {
+  const clicksRef = React.useRef({ count: 0, time: 0 });
+  const onClick = () => {
+    const now = Date.now();
+    if (now - clicksRef.current.time > 1200) clicksRef.current.count = 0;
+    clicksRef.current.count += 1;
+    clicksRef.current.time = now;
+    if (clicksRef.current.count >= 5) {
+      clicksRef.current.count = 0;
+      window.nav && window.nav("/games/sheesh");
+    } else {
+      window.nav && window.nav("/");
+    }
+  };
   return (
-    <div onClick={() => window.nav && window.nav("/")}
+    <div onClick={onClick}
       style={{ display:"flex", alignItems:"center", gap: 10, cursor:"pointer" }}>
       <WittioMark size={size + 2} accent={accent}/>
       <span className="w-mono" style={{
