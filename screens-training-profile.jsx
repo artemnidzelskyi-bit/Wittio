@@ -4,16 +4,52 @@
 // APP CHROME — Sidebar + Header for logged-in areas
 // ══════════════════════════════════════════════════════════
 function AppShell({ active = "today", children }) {
+  const isMobile = useIsMobile();
   const nav = [
     { id:"today",    label:"Today",      icon: "◎", route: "/today" },
-    { id:"train",    label:"Training",   icon: "◇", route: "/today" },
+    { id:"train",    label:"Training",   icon: "◇", route: "/training" },
     { id:"tests",    label:"Tests",      icon: "∑", route: "/iq" },
     { id:"games",    label:"Games",      icon: "▶", route: "/games/memory" },
-    { id:"library",  label:"Library",    icon: "≡", route: "/today" },
+    { id:"library",  label:"Library",    icon: "≡", route: "/library" },
     { id:"profile",  label:"Profile",    icon: "◉", route: "/profile" },
   ];
+
+  if (isMobile) {
+    return (
+      <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", background: W.bg }}>
+        <header style={{
+          display:"flex", alignItems:"center", gap: 8, padding: "12px 16px",
+          borderBottom: `1px solid ${W.line}`, background: W.bgSunken,
+          position: "sticky", top: 0, zIndex: 20,
+        }}>
+          <WittioLogo size={14}/>
+        </header>
+        <nav style={{
+          display:"flex", gap: 4, padding: "8px 12px", overflowX: "auto",
+          borderBottom: `1px solid ${W.line}`, background: W.bgSunken,
+        }}>
+          {nav.map(n => {
+            const on = n.id === active;
+            return (
+              <div key={n.id} onClick={() => window.nav && window.nav(n.route)} style={{
+                display:"flex", alignItems:"center", gap: 6, padding: "6px 10px",
+                borderBottom: `2px solid ${on ? "var(--accent)" : "transparent"}`,
+                color: on ? W.text : W.muted, fontSize: 13, cursor:"pointer",
+                flexShrink: 0, fontFamily: W.sans,
+              }}>
+                <span className="w-mono" style={{ fontSize: 12, color: on ? "var(--accent)" : W.mutedDim }}>{n.icon}</span>
+                <span>{n.label}</span>
+              </div>
+            );
+          })}
+        </nav>
+        <main style={{ flex: 1, overflow:"auto" }}>{children}</main>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ height:"100%", display:"grid", gridTemplateColumns:"220px 1fr", background: W.bg }}>
+    <div style={{ minHeight:"100vh", display:"grid", gridTemplateColumns:"220px 1fr", background: W.bg }}>
       <aside style={{
         borderRight: `1px solid ${W.line}`, background: W.bgSunken, padding: "20px 14px",
         display:"flex", flexDirection:"column", gap: 4,
@@ -56,6 +92,7 @@ function AppShell({ active = "today", children }) {
 // TODAY — Daily training session launcher
 // ══════════════════════════════════════════════════════════
 function Today() {
+  const isMobile = useIsMobile();
   const blocks = [
     { id:"warm",  label:"Warm-up",        game:"Reaction time",  duration:"2m", difficulty:"easy",     done: true },
     { id:"core1", label:"Focus drill",    game:"Memory grid",    duration:"5m", difficulty:"adaptive", done: true },
@@ -63,25 +100,25 @@ function Today() {
     { id:"cool",  label:"Cooldown",       game:"Pattern flow",   duration:"3m", difficulty:"easy",     done: false },
   ];
   return (
-    <div style={{ padding: "32px 48px 48px", maxWidth: 1200, width: "100%" }}>
-      <header style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom: 32 }}>
+    <div style={{ padding: isMobile ? "20px 16px 40px" : "32px 48px 48px", maxWidth: 1200, width: "100%" }}>
+      <header style={{ display:"flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 20 : 0, justifyContent:"space-between", alignItems: isMobile ? "flex-start" : "flex-start", marginBottom: isMobile ? 24 : 32 }}>
         <div>
           <span className="w-mono" style={{ fontSize: 11, color: W.mutedDim, textTransform:"uppercase", letterSpacing:"0.14em" }}>tue · apr 21</span>
-          <h1 className="w-serif" style={{ fontSize: 52, lineHeight: 1.0, fontWeight: 400, margin: "4px 0 6px", letterSpacing:"-0.02em" }}>
+          <h1 className="w-serif" style={{ fontSize: isMobile ? 34 : 52, lineHeight: 1.0, fontWeight: 400, margin: "4px 0 6px", letterSpacing:"-0.02em" }}>
             Good morning, <span style={{ color:"var(--accent)", fontStyle:"italic" }}>Alex</span>.
           </h1>
           <p style={{ color: W.muted, fontSize: 15.5, maxWidth: 540 }}>
             Today's session is tuned to yesterday's results. Estimated 14 minutes. You've got this.
           </p>
         </div>
-        <div style={{ display:"flex", gap: 24, alignItems:"flex-start" }}>
+        <div style={{ display:"flex", gap: isMobile ? 8 : 24, alignItems:"flex-start", flexWrap: "wrap" }}>
           <Metric label="streak"  value="14" unit="d" delta="+1" color={W.amber}/>
           <Metric label="avg iq"  value="128"            delta="+3"/>
           <Metric label="focus"   value="82" unit="%"    delta="+5"/>
         </div>
       </header>
 
-      <div style={{ display:"grid", gridTemplateColumns:"1.4fr 1fr", gap: 24 }}>
+      <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1.4fr 1fr", gap: 24 }}>
         {/* Main session */}
         <TerminalCard title="session/today.plan" accent="var(--accent)">
           <div style={{ padding: 28 }}>
@@ -211,6 +248,7 @@ function Today() {
 // PROFILE — progress / stats
 // ══════════════════════════════════════════════════════════
 function Profile() {
+  const isMobile = useIsMobile();
   const skills = [
     { label:"Memory",     value: 86, delta:"+12", color:"var(--accent)" },
     { label:"Focus",      value: 74, delta:"+8",  color: W.cyan },
@@ -228,9 +266,9 @@ function Profile() {
   const ty = (v) => tH - ((v - minT)/(maxT - minT)) * (tH - 20);
 
   return (
-    <div style={{ padding: "32px 48px 48px", maxWidth: 1200, width: "100%" }}>
+    <div style={{ padding: isMobile ? "20px 16px 40px" : "32px 48px 48px", maxWidth: 1200, width: "100%" }}>
       {/* Header */}
-      <div style={{ display:"flex", alignItems:"center", gap: 24, marginBottom: 32 }}>
+      <div style={{ display:"flex", alignItems:"center", gap: isMobile ? 14 : 24, marginBottom: isMobile ? 20 : 32, flexWrap: "wrap" }}>
         <div style={{
           width: 96, height: 96, border: `1px solid var(--accent)`, background: W.bgRaised,
           display:"flex", alignItems:"center", justifyContent:"center",
@@ -258,7 +296,7 @@ function Profile() {
 
       {/* Stat strip */}
       <div style={{
-        display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap: 1,
+        display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 1,
         background: W.line, border: `1px solid ${W.line}`, marginBottom: 32,
       }}>
         {[
@@ -310,7 +348,7 @@ function Profile() {
       </TerminalCard>
 
       {/* Skills radar + achievements */}
-      <div style={{ display:"grid", gridTemplateColumns:"1.2fr 1fr", gap: 24 }}>
+      <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1.2fr 1fr", gap: 24 }}>
         <div style={{ border: `1px solid ${W.line}`, background: W.bgRaised, padding: 24 }}>
           <div className="w-mono" style={{ fontSize: 11, color: W.mutedDim, textTransform:"uppercase", letterSpacing:"0.14em", marginBottom: 18 }}>
             cognitive skills
@@ -715,4 +753,258 @@ function GameShell({ title, round, score, streak, children }) {
   );
 }
 
-Object.assign(window, { AppShell, Today, Profile, GameMemoryGrid, GameReactionTime, GameWordChains });
+// ══════════════════════════════════════════════════════════
+// TRAINING — 8-week program (MVP)
+// ══════════════════════════════════════════════════════════
+function Training() {
+  const isMobile = useIsMobile();
+  const currentWeek = 3;
+  const weeks = [
+    { n: 1, title: "Baseline & pattern fundamentals", desc: "Raven matrices, shape rotations, visual logic warm-ups.", days: 7 },
+    { n: 2, title: "Working memory",                  desc: "Simon-style grids, n-back, chunking drills.",            days: 7 },
+    { n: 3, title: "Reaction & focus",                desc: "Timing drills, attention switches, distraction filtering.", days: 7 },
+    { n: 4, title: "Verbal fluency",                  desc: "Word chains, anagrams, semantic categories.",            days: 7 },
+    { n: 5, title: "Logical reasoning",               desc: "Number sequences, syllogisms, conditional chains.",      days: 7 },
+    { n: 6, title: "Spatial & mental rotation",       desc: "3D rotation, folding, mental mapping.",                  days: 7 },
+    { n: 7, title: "Speed under pressure",            desc: "Mixed drills with time limits, error cost.",             days: 7 },
+    { n: 8, title: "Integration & re-test",           desc: "Full sections end-to-end. Re-take the IQ assessment.",   days: 7 },
+  ];
+  return (
+    <div style={{ padding: isMobile ? "20px 16px 40px" : "32px 48px 48px", maxWidth: 1100, width: "100%" }}>
+      <header style={{ marginBottom: 28 }}>
+        <span className="w-mono" style={{ fontSize: 11, color: W.mutedDim, textTransform:"uppercase", letterSpacing:"0.14em" }}>
+          training program · 8 weeks · personalized
+        </span>
+        <h1 className="w-serif" style={{ fontSize: isMobile ? 34 : 48, lineHeight: 1.05, fontWeight: 400, margin: "6px 0 10px", letterSpacing:"-0.02em" }}>
+          Your 8-week plan — you're on <span style={{ color:"var(--accent)", fontStyle:"italic" }}>week {currentWeek}</span>.
+        </h1>
+        <p style={{ color: W.muted, fontSize: 15, maxWidth: 620 }}>
+          Each week targets a different cognitive domain. Short daily sessions &mdash; 10 to 15 minutes. Re-assessment at the end.
+        </p>
+      </header>
+
+      <div style={{ marginBottom: 28 }}>
+        <div className="w-mono" style={{ fontSize: 11, color: W.mutedDim, textTransform:"uppercase", letterSpacing:"0.14em", marginBottom: 8 }}>
+          overall progress · {Math.round((currentWeek - 1) / weeks.length * 100)}%
+        </div>
+        <BlockProgress value={currentWeek - 1} total={weeks.length} width={isMobile ? 280 : 520}/>
+      </div>
+
+      <div style={{ display:"flex", flexDirection:"column", gap: 10 }}>
+        {weeks.map(w => {
+          const done = w.n < currentWeek;
+          const active = w.n === currentWeek;
+          return (
+            <div key={w.n} style={{
+              display:"grid",
+              gridTemplateColumns: isMobile ? "44px 1fr" : "56px 1fr auto",
+              gap: 16, alignItems:"center",
+              padding: isMobile ? "14px 14px" : "16px 20px",
+              border: `1px solid ${active ? "var(--accent)" : W.line}`,
+              background: active ? "var(--accent-bg)" : (done ? W.bgSunken : W.bgRaised),
+              boxShadow: active ? "0 0 0 1px var(--accent), 0 0 30px -8px var(--accent-glow)" : "none",
+            }}>
+              <div style={{
+                width: isMobile ? 36 : 44, height: isMobile ? 36 : 44,
+                border: `1px solid ${done ? "var(--accent)" : (active ? "var(--accent)" : W.line)}`,
+                background: done ? "var(--accent-bg)" : "transparent",
+                display:"flex", alignItems:"center", justifyContent:"center",
+                color: done || active ? "var(--accent)" : W.muted,
+                fontFamily: W.mono, fontSize: 13,
+              }}>
+                {done ? <Icons.check/> : String(w.n).padStart(2,"0")}
+              </div>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 500, color: done ? W.muted : W.text }}>
+                  Week {w.n} — <span style={{ color: W.muted, fontWeight: 400 }}>{w.title}</span>
+                </div>
+                <div style={{ fontSize: 12.5, color: W.mutedDim, marginTop: 3 }}>{w.desc}</div>
+              </div>
+              {!isMobile && (
+                <div>
+                  {active && (
+                    <button className="w-btn w-btn-primary" onClick={() => window.nav && window.nav("/today")} style={{ height: 36, padding: "0 14px" }}>
+                      <Icons.play/> continue
+                    </button>
+                  )}
+                  {done && <span className="w-mono" style={{ fontSize: 11, color:"var(--accent)" }}>complete</span>}
+                  {!active && !done && <span className="w-mono" style={{ fontSize: 11, color: W.mutedDim }}>locked</span>}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {isMobile && (
+        <button className="w-btn w-btn-primary" onClick={() => window.nav && window.nav("/today")}
+          style={{ marginTop: 20, width: "100%" }}>
+          <Icons.play/> continue today's session
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════
+// LIBRARY — index of articles (MVP: 1 article)
+// ══════════════════════════════════════════════════════════
+const ARTICLES = [
+  {
+    slug: "neuroplasticity",
+    title: "Neuroplasticity: How to rewire your brain at any age",
+    readingTime: "3 min read",
+    category: "Neuroscience",
+    excerpt: "Your brain isn't a static organ. It's a muscle designed to adapt, strengthen, and reshape itself throughout your entire life.",
+  },
+];
+
+function Library() {
+  const isMobile = useIsMobile();
+  return (
+    <div style={{ padding: isMobile ? "20px 16px 40px" : "32px 48px 48px", maxWidth: 1100, width: "100%" }}>
+      <header style={{ marginBottom: 28 }}>
+        <span className="w-mono" style={{ fontSize: 11, color: W.mutedDim, textTransform:"uppercase", letterSpacing:"0.14em" }}>
+          library · articles · science of the brain
+        </span>
+        <h1 className="w-serif" style={{ fontSize: isMobile ? 34 : 48, lineHeight: 1.05, fontWeight: 400, margin: "6px 0 10px", letterSpacing:"-0.02em" }}>
+          Read between reps.
+        </h1>
+        <p style={{ color: W.muted, fontSize: 15, maxWidth: 560 }}>
+          Short, research-backed pieces on how the brain actually learns, adapts, and improves with training.
+        </p>
+      </header>
+
+      <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
+        {ARTICLES.map(a => (
+          <div key={a.slug} onClick={() => window.nav && window.nav(`/library/${a.slug}`)}
+            style={{
+              padding: 24, border: `1px solid ${W.line}`, background: W.bgRaised, cursor: "pointer",
+              transition: "all .15s", position: "relative",
+            }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent)"}
+            onMouseLeave={e => e.currentTarget.style.borderColor = W.line}>
+            <div className="w-mono" style={{ fontSize: 10.5, letterSpacing:"0.14em", textTransform:"uppercase", color: W.mutedDim, marginBottom: 12 }}>
+              {a.category} · {a.readingTime}
+            </div>
+            <div className="w-serif" style={{ fontSize: 26, lineHeight: 1.15, color: W.text, marginBottom: 10 }}>
+              {a.title}
+            </div>
+            <p style={{ color: W.muted, fontSize: 14, lineHeight: 1.5, margin: 0 }}>
+              {a.excerpt}
+            </p>
+            <div className="w-mono" style={{ fontSize: 11, color:"var(--accent)", marginTop: 18, letterSpacing:"0.08em" }}>
+              read article →
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════
+// ARTICLE — single article page (Neuroplasticity)
+// ══════════════════════════════════════════════════════════
+function ArticleNeuroplasticity() {
+  const isMobile = useIsMobile();
+  const H2 = ({ children }) => (
+    <h2 className="w-serif" style={{ fontSize: isMobile ? 26 : 32, fontWeight: 400, margin: "36px 0 14px", letterSpacing:"-0.01em" }}>{children}</h2>
+  );
+  const H3 = ({ children }) => (
+    <h3 className="w-mono" style={{ fontSize: 14, color: "var(--accent)", textTransform:"uppercase", letterSpacing:"0.14em", margin: "28px 0 10px" }}>{children}</h3>
+  );
+  const P = ({ children }) => (
+    <p style={{ color: W.text, fontSize: 16.5, lineHeight: 1.65, margin: "0 0 14px", maxWidth: 720 }}>{children}</p>
+  );
+  const Note = ({ label, children }) => (
+    <div style={{ borderLeft: `2px solid var(--accent)`, padding: "10px 16px", background: W.bgRaised, margin: "14px 0 20px", maxWidth: 720 }}>
+      <div className="w-mono" style={{ fontSize: 10.5, color:"var(--accent)", textTransform:"uppercase", letterSpacing:"0.14em", marginBottom: 4 }}>{label}</div>
+      <div style={{ color: W.text, fontSize: 15, lineHeight: 1.55 }}>{children}</div>
+    </div>
+  );
+
+  return (
+    <div style={{ padding: isMobile ? "20px 16px 48px" : "40px 56px 56px", maxWidth: 820, width: "100%", margin: "0 auto" }}>
+      <div onClick={() => window.nav && window.nav("/library")} className="w-mono"
+        style={{ fontSize: 12, color: W.muted, cursor:"pointer", marginBottom: 24, display:"inline-flex", gap: 6 }}>
+        ← back to library
+      </div>
+
+      <span className="w-chip w-chip-accent" style={{ marginBottom: 14 }}>
+        <Icons.brain/> neuroscience · 3 min read
+      </span>
+      <h1 className="w-serif" style={{ fontSize: isMobile ? 36 : 52, lineHeight: 1.05, fontWeight: 400, margin: "10px 0 18px", letterSpacing:"-0.02em" }}>
+        Neuroplasticity: How to rewire your <span style={{ color:"var(--accent)", fontStyle:"italic" }}>brain</span> at any age.
+      </h1>
+
+      <P>
+        For a long time, the prevailing wisdom was that the brain only develops during childhood, leaving adults to simply manage a slow decline in cognitive function. Fortunately, modern science has flipped the script. The truth is, your brain isn't a static organ. Think of it more like a muscle that is designed to adapt, strengthen, and reshape itself throughout your entire life.
+      </P>
+      <P>
+        <strong style={{ color: W.text }}>Neuroplasticity</strong> is the brain's ability to form new neural connections in response to new experiences, learning, and environment. It's the reason you can pick up a new language at 60, bounce back from burnout, or finally sharpen your focus.
+      </P>
+
+      <H2>The mental gym: How it works</H2>
+      <P>
+        The brain is all about efficiency. If you perform the same tasks every day, it switches to autopilot to save calories. Your neural pathways become predictable shortcuts. They save you time, but they also make your thinking a bit rigid. To stay sharp, your mind requires three specific triggers: <strong style={{ color: W.text }}>novelty, challenge, and consistency.</strong>
+      </P>
+
+      <H3>01 / Cognitive games: Targeted training</H3>
+      <P>
+        Games designed for memory, attention, and logic are more than just digital distractions. They are high-intensity interval training (HIIT) for your prefrontal cortex.
+      </P>
+      <Note label="The science">
+        When you tackle a puzzle that isn't instantly intuitive, your brain is forced to fire and wire new signals across synapses.
+      </Note>
+      <Note label="Pro tip">
+        If a game feels easy, your brain has already adapted. The real benefit happens in the "stretch zone" — that slightly uncomfortable space where you have to truly concentrate.
+      </Note>
+
+      <H3>02 / Psychological insight & self-testing</H3>
+      <P>
+        Cognitive ability doesn't exist in a vacuum; it is deeply tied to your emotional state. High levels of cortisol (the stress hormone) can physically shrink the hippocampus — the area of the brain responsible for memory and learning.
+      </P>
+      <Note label="Assessment as a tool">
+        Taking psychological tests isn't about labeling yourself. It's about data. By identifying your stress triggers or cognitive biases, you can choose the right micro-courses to build emotional resilience.
+      </Note>
+
+      <H3>03 / Microlearning: Small bites, big gains</H3>
+      <P>
+        Why are 10-minute learning intervals more effective than a three-hour seminar? It comes down to the <strong style={{ color: W.text }}>Spacing Effect</strong>. The brain can only absorb a limited amount of information before it needs to consolidate it into long-term memory.
+      </P>
+      <P>
+        Microlearning works with your biology, not against it. By engaging in short, frequent lessons, you prevent cognitive fatigue and ensure that new neural pathways have time to stabilize.
+      </P>
+
+      <H2>3 ways to upgrade your brainpower today</H2>
+      <ol style={{ color: W.text, fontSize: 16.5, lineHeight: 1.65, paddingLeft: 22, maxWidth: 720 }}>
+        <li style={{ marginBottom: 10 }}>
+          <strong style={{ color: W.text }}>Break the routine.</strong> Even something as simple as using your non-dominant hand to brush your teeth forces your brain to pay attention and build new motor pathways.
+        </li>
+        <li style={{ marginBottom: 10 }}>
+          <strong style={{ color: W.text }}>Challenge your blind spots.</strong> Log in and play a game in a category you usually avoid. If you love logic, try a visual-spatial task. Real progress starts when you step out of your comfort zone.
+        </li>
+        <li style={{ marginBottom: 10 }}>
+          <strong style={{ color: W.text }}>Know your starting point.</strong> Take a quick focus or personality test to find out where you stand. You can't improve what you don't measure.
+        </li>
+      </ol>
+
+      <P>The brain is the only tool that becomes sharper the more you use it. Don't let it rust.</P>
+
+      <div style={{ marginTop: 40, padding: 24, border: `1px solid var(--accent)`, background: "var(--accent-bg)" }}>
+        <div className="w-mono" style={{ fontSize: 11, color:"var(--accent)", textTransform:"uppercase", letterSpacing:"0.14em", marginBottom: 10 }}>
+          ready to dive deeper?
+        </div>
+        <p style={{ fontSize: 15.5, color: W.text, lineHeight: 1.55, margin: "0 0 16px" }}>
+          Start with a 2-minute IQ assessment to see where you stand.
+        </p>
+        <button className="w-btn w-btn-primary" onClick={() => window.nav && window.nav("/iq")}>
+          take the iq test <Icons.arrow/>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { AppShell, Today, Profile, Training, Library, ArticleNeuroplasticity, GameMemoryGrid, GameReactionTime, GameWordChains });

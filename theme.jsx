@@ -93,4 +93,15 @@ const W = {
   document.head.appendChild(s);
 })();
 
-Object.assign(window, { W, WITTIO_TWEAKS, accentPresets });
+// ── useIsMobile hook (shared) ─────────────────────────────
+function useIsMobile(bp = 768) {
+  const [m, setM] = React.useState(typeof window !== "undefined" && window.innerWidth < bp);
+  React.useEffect(() => {
+    const onResize = () => setM(window.innerWidth < bp);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [bp]);
+  return m;
+}
+
+Object.assign(window, { W, WITTIO_TWEAKS, accentPresets, useIsMobile });

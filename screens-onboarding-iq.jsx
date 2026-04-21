@@ -38,6 +38,7 @@ function StatusStrip({ step, steps, right }) {
 // ONBOARDING — "meet your brain" quiz, 3-step
 // ══════════════════════════════════════════════════════════
 function Onboarding({ step = 2, onContinue, onSkip }) {
+  const isMobile = useIsMobile();
   const goals = [
     { id:"focus",    label:"Sharpen focus",        desc:"Cut the noise. Hold attention longer.", icon:"◎" },
     { id:"memory",   label:"Boost memory",         desc:"Remember names, numbers, ideas.",        icon:"◆" },
@@ -50,17 +51,17 @@ function Onboarding({ step = 2, onContinue, onSkip }) {
   const toggle = (id) => setPicked(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   return (
-    <div className="w-grid-bg" style={{ height: "100%", display:"flex", flexDirection:"column" }}>
+    <div className="w-grid-bg" style={{ minHeight: "100vh", display:"flex", flexDirection:"column" }}>
       <StatusStrip step={step} steps={3} right={<span className="w-link" onClick={onSkip} style={{color: W.muted, border:"none", cursor:"pointer"}}>skip →</span>}/>
 
-      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1.1fr 1fr", gap: 0 }}>
+      <div style={{ flex: 1, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.1fr 1fr", gap: 0 }}>
         {/* left: prompt */}
-        <div style={{ padding: "64px 64px 40px", display:"flex", flexDirection:"column", justifyContent:"space-between" }}>
+        <div style={{ padding: isMobile ? "28px 20px 20px" : "64px 64px 40px", display:"flex", flexDirection:"column", justifyContent:"space-between", gap: isMobile ? 24 : 0 }}>
           <div>
             <span className="w-chip w-chip-accent" style={{ marginBottom: 20 }}>
               <Icons.dot/> 02 — goals
             </span>
-            <h1 className="w-serif" style={{ fontSize: 72, lineHeight: 1.0, margin: "20px 0 18px", fontWeight: 400, letterSpacing:"-0.02em" }}>
+            <h1 className="w-serif" style={{ fontSize: isMobile ? 40 : 72, lineHeight: 1.0, margin: "20px 0 18px", fontWeight: 400, letterSpacing:"-0.02em" }}>
               What do you want<br/>
               <span style={{ color: "var(--accent)", fontStyle:"italic" }}>your mind</span> to do better?
             </h1>
@@ -81,7 +82,7 @@ function Onboarding({ step = 2, onContinue, onSkip }) {
         </div>
 
         {/* right: goal cards */}
-        <div style={{ padding: "64px 64px 40px", background: W.bgSunken, borderLeft: `1px solid ${W.line}`, position:"relative" }}>
+        <div style={{ padding: isMobile ? "24px 20px 40px" : "64px 64px 40px", background: W.bgSunken, borderLeft: isMobile ? "none" : `1px solid ${W.line}`, borderTop: isMobile ? `1px solid ${W.line}` : "none", position:"relative" }}>
           <div className="w-ascii" style={{ fontSize: 10, position:"absolute", top: 20, right: 24 }}>
 {`┌─ goals.txt ──────────┐
 │  pick 1–6 options     │
@@ -131,17 +132,20 @@ function Onboarding({ step = 2, onContinue, onSkip }) {
 // IQ TEST — Intro
 // ══════════════════════════════════════════════════════════
 function IQIntro({ onStart }) {
+  const isMobile = useIsMobile();
   return (
-    <div className="w-grid-bg" style={{ height: "100%", display:"flex", flexDirection:"column" }}>
+    <div className="w-grid-bg" style={{ minHeight: "100vh", display:"flex", flexDirection:"column" }}>
       <StatusStrip right={<span className="w-mono">iq_assessment.v2</span>}/>
-      <div style={{ flex: 1, display:"flex", alignItems:"center", justifyContent:"center", padding: 48 }}>
-        <div style={{ maxWidth: 960, width: "100%", display:"grid", gridTemplateColumns:"1fr 1fr", gap: 48, alignItems:"center" }}>
+      <div style={{ flex: 1, display:"flex", alignItems:"center", justifyContent:"center", padding: isMobile ? 20 : 48 }}>
+        <div style={{ maxWidth: 960, width: "100%", display:"grid",
+            gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+            gap: isMobile ? 24 : 48, alignItems:"center" }}>
 
           <div>
             <span className="w-chip w-chip-accent">
               <Icons.brain/> IQ assessment · 20 questions · ~18 min
             </span>
-            <h1 className="w-serif" style={{ fontSize: 68, lineHeight: 1.02, margin: "22px 0 18px", fontWeight: 400, letterSpacing:"-0.02em" }}>
+            <h1 className="w-serif" style={{ fontSize: isMobile ? 40 : 68, lineHeight: 1.02, margin: "22px 0 18px", fontWeight: 400, letterSpacing:"-0.02em" }}>
               Ready to meet <br/>
               <span style={{ fontStyle:"italic", color: "var(--accent)" }}>your</span> intelligence?
             </h1>
@@ -165,7 +169,6 @@ function IQIntro({ onStart }) {
 
             <div style={{ display:"flex", gap: 12, alignItems:"center" }}>
               <button className="w-btn w-btn-primary" onClick={onStart}>start assessment <Icons.arrow/></button>
-              <button className="w-btn w-btn-ghost" onClick={onStart}>sample question</button>
             </div>
 
             <div style={{ marginTop: 28, display:"flex", gap: 20, color: W.mutedDim, fontSize: 12.5 }}>
@@ -345,6 +348,7 @@ function AnalogyOption({ option, selected }) {
 }
 
 function IQQuestion({ question, qNum = 1, total = 3, selected, onSelect, onNext, onPrev, onSkip }) {
+  const isMobile = useIsMobile();
   const [confidence, setConfidence] = React.useState(70);
   const sectionLabel = `section ${String(qNum).padStart(2,"0")} · ${question.section}`;
 
@@ -362,15 +366,19 @@ function IQQuestion({ question, qNum = 1, total = 3, selected, onSelect, onNext,
         </span>
       }/>
 
-      <div style={{ flex: 1, display:"grid", gridTemplateColumns:"1.15fr 1fr", gap: 0, minHeight: 640 }}>
+      <div style={{ flex: 1, display:"grid",
+          gridTemplateColumns: isMobile ? "1fr" : "1.15fr 1fr", gap: 0, minHeight: isMobile ? 0 : 640 }}>
         {/* left: stimulus */}
-        <div style={{ padding: "48px 48px 32px", borderRight: `1px solid ${W.line}`, display:"flex", flexDirection:"column", position:"relative" }}>
+        <div style={{ padding: isMobile ? "24px 20px" : "48px 48px 32px",
+            borderRight: isMobile ? "none" : `1px solid ${W.line}`,
+            borderBottom: isMobile ? `1px solid ${W.line}` : "none",
+            display:"flex", flexDirection:"column", position:"relative" }}>
           <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", marginBottom: 8 }}>
             <span className="w-chip">{sectionLabel}</span>
             <span className="w-mono" style={{ fontSize: 11, color: W.mutedDim }}>q.{String(qNum).padStart(2,"0")} / {String(total).padStart(2,"0")}</span>
           </div>
 
-          <h2 className="w-serif" style={{ fontSize: 40, lineHeight: 1.15, margin: "12px 0 24px", fontWeight: 400, letterSpacing:"-0.01em" }}>
+          <h2 className="w-serif" style={{ fontSize: isMobile ? 26 : 40, lineHeight: 1.15, margin: "12px 0 24px", fontWeight: 400, letterSpacing:"-0.01em" }}>
             {question.prompt}
           </h2>
 
@@ -384,7 +392,7 @@ function IQQuestion({ question, qNum = 1, total = 3, selected, onSelect, onNext,
         </div>
 
         {/* right: options + controls */}
-        <div style={{ padding: "48px 48px 32px", background: W.bgSunken, display:"flex", flexDirection:"column" }}>
+        <div style={{ padding: isMobile ? "24px 20px 32px" : "48px 48px 32px", background: W.bgSunken, display:"flex", flexDirection:"column" }}>
           <span className="w-mono" style={{ fontSize: 11, color: W.mutedDim, textTransform:"uppercase", letterSpacing:"0.12em" }}>choose one</span>
 
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap: 12, marginTop: 14 }}>
@@ -446,6 +454,7 @@ function IQQuestion({ question, qNum = 1, total = 3, selected, onSelect, onNext,
 // IQ TEST — Results
 // ══════════════════════════════════════════════════════════
 function IQResults({ score = 100, correct = 1, total = 3, breakdown, onContinue, onRetake }) {
+  const isMobile = useIsMobile();
   // Derive tier + percentile from score (standard IQ, μ=100, σ=15)
   const tierIndex = score >= 125 ? 0 : score >= 110 ? 1 : score >= 95 ? 2 : score >= 80 ? 3 : 4; // 0=gifted..4=low-avg
   const tiers = ["gifted","superior","high-avg","avg","low-avg"];
@@ -494,12 +503,12 @@ function IQResults({ score = 100, correct = 1, total = 3, breakdown, onContinue,
     <div style={{ minHeight: "100vh", display:"flex", flexDirection:"column" }}>
       <StatusStrip right={<span className="w-mono" style={{color:"var(--accent)"}}>● completed · {correct}/{total} correct</span>}/>
 
-      <div style={{ padding: "48px 56px", maxWidth: 1280, margin: "0 auto", width: "100%" }}>
+      <div style={{ padding: isMobile ? "28px 20px" : "48px 56px", maxWidth: 1280, margin: "0 auto", width: "100%" }}>
         {/* Hero */}
-        <div style={{ display:"grid", gridTemplateColumns:"1.1fr 1fr", gap: 48, alignItems:"center", marginBottom: 40 }}>
+        <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1.1fr 1fr", gap: isMobile ? 24 : 48, alignItems:"center", marginBottom: 40 }}>
           <div>
             <span className="w-chip w-chip-accent"><Icons.check/> your iq assessment · apr 21, 2026</span>
-            <h1 className="w-serif" style={{ fontSize: 54, lineHeight: 1.05, margin: "18px 0 8px", fontWeight: 400 }}>
+            <h1 className="w-serif" style={{ fontSize: isMobile ? 34 : 54, lineHeight: 1.05, margin: "18px 0 8px", fontWeight: 400 }}>
               You scored <span style={{ fontStyle:"italic", color:"var(--accent)" }}>{score}</span> —<br/>
               {headline}.
             </h1>
@@ -522,7 +531,7 @@ function IQResults({ score = 100, correct = 1, total = 3, breakdown, onContinue,
               IQ score · {correct}/{total} correct
             </div>
             <div style={{ display:"flex", alignItems:"baseline", gap: 12 }}>
-              <span className="w-mono" style={{ fontSize: 120, fontWeight: 500, color:"var(--accent)", letterSpacing:"-0.04em", lineHeight: 0.9 }}>
+              <span className="w-mono" style={{ fontSize: isMobile ? 80 : 120, fontWeight: 500, color:"var(--accent)", letterSpacing:"-0.04em", lineHeight: 0.9 }}>
                 {score}
               </span>
               <div style={{ display:"flex", flexDirection:"column", gap: 2 }}>
@@ -572,7 +581,7 @@ function IQResults({ score = 100, correct = 1, total = 3, breakdown, onContinue,
         </TerminalCard>
 
         {/* Subscores + narrative */}
-        <div style={{ display:"grid", gridTemplateColumns:"1.2fr 1fr", gap: 24 }}>
+        <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1.2fr 1fr", gap: 24 }}>
           <div>
             <h3 className="w-mono" style={{ fontSize: 12, color: W.mutedDim, textTransform:"uppercase", letterSpacing:"0.14em", marginBottom: 16 }}>breakdown by section</h3>
             <div style={{ display:"flex", flexDirection:"column", gap: 14 }}>
