@@ -113,6 +113,96 @@ function Shell({ children, accent = "#A8FF60" }) {
   return <div className="w-root w-noise" style={style}>{children}</div>;
 }
 
+// ── Results preview (right column of Landing hero) ───────────
+function ResultsPreview() {
+  const score = 128;
+  const pts = [];
+  for (let x = 55; x <= 145; x += 2) {
+    pts.push([x, Math.exp(-Math.pow((x - 100)/15, 2) / 2)]);
+  }
+  const VW = 320, VH = 84;
+  const xMap = (x) => ((x - 55) / 90) * VW;
+  const yMap = (y) => VH - y * (VH - 4);
+  const pathD = "M " + pts.map(([x,y]) => `${xMap(x)},${yMap(y)}`).join(" L ");
+  const fillD = pathD + ` L ${VW},${VH} L 0,${VH} Z`;
+  const scoreY = yMap(Math.exp(-Math.pow((score-100)/15,2)/2));
+  const scoreX = xMap(score);
+
+  const subs = [
+    { k: "pattern", v: 132 },
+    { k: "logic",   v: 128 },
+    { k: "verbal",  v: 119 },
+  ];
+
+  return (
+    <TerminalCard title="your_report.preview" accent="var(--accent)" style={{ width:"100%" }}>
+      <div style={{ padding: 24, position: "relative" }}>
+        <div className="w-scanline"/>
+        <div style={{
+          position:"absolute", top: 14, right: 16,
+          fontFamily: W.mono, fontSize: 10, color: W.mutedDim,
+          letterSpacing:"0.14em", textTransform:"uppercase",
+          background: W.bgRaised, padding: "2px 6px", border: `1px solid ${W.line}`,
+        }}>
+          preview
+        </div>
+
+        <div style={{ display:"flex", alignItems:"baseline", gap: 14, marginBottom: 4 }}>
+          <span className="w-mono" style={{ fontSize: 76, color:"var(--accent)", lineHeight: 1, letterSpacing:"-0.03em", fontWeight: 500 }}>
+            {score}
+          </span>
+          <div>
+            <div className="w-mono" style={{ fontSize: 10.5, color: W.mutedDim, letterSpacing:"0.14em", textTransform:"uppercase" }}>your iq</div>
+            <div className="w-mono" style={{ fontSize: 14, color: W.text, marginTop: 2 }}>top 3% · p97</div>
+          </div>
+        </div>
+
+        <div style={{ marginTop: 16, marginBottom: 4 }}>
+          <svg viewBox={`0 0 ${VW} ${VH + 16}`} style={{ width: "100%", height: "auto", display:"block" }}>
+            {[85, 100, 115, 130].map(x => (
+              <line key={x} x1={xMap(x)} x2={xMap(x)} y1={0} y2={VH} stroke={W.line} strokeDasharray="2 3"/>
+            ))}
+            <path d={fillD} fill="var(--accent-bg)"/>
+            <path d={pathD} fill="none" stroke="var(--accent)" strokeWidth="1.5"/>
+            <line x1={scoreX} x2={scoreX} y1={scoreY} y2={VH} stroke="var(--accent)" strokeWidth="2"/>
+            <circle cx={scoreX} cy={scoreY} r="5" fill="var(--accent)" stroke={W.bg} strokeWidth="2"/>
+            {[70, 100, 130].map(x => (
+              <text key={x} x={xMap(x)} y={VH + 12} fontFamily={W.mono} fontSize="9" fill={W.mutedDim} textAnchor="middle">{x}</text>
+            ))}
+          </svg>
+        </div>
+
+        <div style={{ marginTop: 14, display:"flex", flexDirection:"column", gap: 8 }}>
+          {subs.map(s => (
+            <div key={s.k}>
+              <div style={{ display:"flex", justifyContent:"space-between", marginBottom: 4 }}>
+                <span className="w-mono" style={{ fontSize: 10.5, color: W.mutedDim, textTransform:"uppercase", letterSpacing:"0.12em" }}>{s.k}</span>
+                <span className="w-mono" style={{ fontSize: 12, color: "var(--accent)" }}>{s.v}</span>
+              </div>
+              <div style={{ height: 4, background: W.bgSunken, border: `1px solid ${W.line}` }}>
+                <div style={{ width: `${Math.min(100, (s.v-70)/70*100)}%`, height: "100%", background: "var(--accent)" }}/>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{
+          marginTop: 18, padding: "12px 14px", border: `1px dashed var(--accent)`,
+          background: "var(--accent-bg)", display:"flex", alignItems:"center",
+          justifyContent:"space-between", gap: 10, flexWrap: "wrap",
+        }}>
+          <span className="w-mono" style={{ fontSize: 11.5, color: W.muted }}>
+            <span style={{ color: W.text }}>this is your report.</span> 2-min test · no sign-up.
+          </span>
+          <button onClick={() => window.nav("/iq")} className="w-btn w-btn-primary" style={{ height: 32, padding: "0 14px", fontSize: 11 }}>
+            unlock mine →
+          </button>
+        </div>
+      </div>
+    </TerminalCard>
+  );
+}
+
 // ── Landing ──────────────────────────────────────────────────
 function Landing() {
   const isMobile = useIsMobile();
@@ -174,43 +264,7 @@ function Landing() {
           borderTop:  isMobile ? `1px solid ${W.line}` : "none",
           position:"relative", display:"flex", alignItems:"center",
         }}>
-          <TerminalCard title="wittio/demo" accent="var(--accent)" style={{ width:"100%" }}>
-            <div style={{ padding: 24 }}>
-              <div className="w-mono" style={{ fontSize: 12, color: W.muted, lineHeight: 1.7 }}>
-                <div><span style={{color:"var(--accent)"}}>$</span> wittio assess --iq</div>
-                <div style={{color: W.mutedDim}}>› 3 questions · pattern · logic · verbal</div>
-                <div style={{color: W.mutedDim}}>› no timer · no sign-up</div>
-                <div style={{ marginTop: 8 }}>› <span style={{color: W.text}}>takes ~2 minutes</span></div>
-              </div>
-
-              <div style={{ marginTop: 22, padding: 18, border: `1px solid var(--accent)`, background: "var(--accent-bg)" }}>
-                <div style={{ display:"flex", alignItems:"baseline", gap: 10 }}>
-                  <span className="w-mono" style={{ fontSize: 46, fontWeight: 500, color:"var(--accent)", lineHeight: 1 }}>3</span>
-                  <span className="w-mono" style={{ fontSize: 12, color: W.muted }}>questions · one from each domain</span>
-                </div>
-                <div style={{ height: 4, background: W.bgSunken, marginTop: 10, position:"relative" }}>
-                  <div style={{ width: "100%", height: "100%", background: "var(--accent)" }}/>
-                </div>
-              </div>
-
-              <div style={{ marginTop: 20, display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap: 10 }}>
-                {[
-                  { k:"pattern", v:"q.1" },
-                  { k:"logic",   v:"q.2" },
-                  { k:"verbal",  v:"q.3" },
-                ].map(x => (
-                  <div key={x.k} style={{ border: `1px solid ${W.line}`, padding: 10 }}>
-                    <div className="w-mono" style={{ fontSize: 10, color: W.mutedDim, textTransform:"uppercase", letterSpacing:"0.1em" }}>{x.k}</div>
-                    <div className="w-mono" style={{ fontSize: 18, color: W.text, marginTop: 2 }}>{x.v}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ marginTop: 16, fontFamily: W.mono, fontSize: 11, color: W.mutedDim }}>
-                › ready? press <span onClick={() => window.nav("/iq")} style={{color:"var(--accent)", cursor:"pointer"}}>[enter]</span><span className="w-caret"/>
-              </div>
-            </div>
-          </TerminalCard>
+          <ResultsPreview/>
         </div>
       </div>
     </div>
