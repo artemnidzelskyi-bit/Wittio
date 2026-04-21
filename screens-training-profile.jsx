@@ -899,25 +899,46 @@ function GameSheeesh() {
   );
 }
 
+const GAME_ROTATION = [
+  { path: "/games/memory",   label: "memory grid"   },
+  { path: "/games/reaction", label: "reaction time" },
+  { path: "/games/words",    label: "word chains"   },
+  { path: "/games/sheesh",   label: "sheeesh rush"  },
+];
+
 function GameShell({ title, round, score, streak, children }) {
+  const isMobile = useIsMobile();
+  const here = (typeof window !== "undefined" ? window.location.hash.slice(1) : "") || "/";
+  const idx  = GAME_ROTATION.findIndex(g => g.path === here);
+  const next = GAME_ROTATION[((idx < 0 ? 0 : idx) + 1) % GAME_ROTATION.length];
+
   return (
-    <div className="w-grid-bg" style={{ height:"100%", display:"flex", flexDirection:"column" }}>
+    <div className="w-grid-bg" style={{ minHeight:"100vh", display:"flex", flexDirection:"column" }}>
       <div style={{
-        display:"flex", alignItems:"center", padding: "14px 28px",
+        display:"flex", alignItems:"center", gap: isMobile ? 8 : 12,
+        padding: isMobile ? "10px 14px" : "14px 28px",
         borderBottom: `1px solid ${W.line}`, background: W.bgSunken,
-        fontFamily: W.mono, fontSize: 12,
+        fontFamily: W.mono, fontSize: 12, flexWrap: "wrap",
       }}>
-        <button className="w-btn w-btn-ghost" onClick={() => window.nav && window.nav("/today")} style={{ height: 32, padding: "0 12px", fontSize: 11 }}>← exit</button>
-        <span style={{ marginLeft: 16, color: W.mutedDim, textTransform:"uppercase", letterSpacing:"0.14em" }}>
-          game: <span style={{color:"var(--accent)"}}>{title}</span> · round {round}
-        </span>
+        <button className="w-btn w-btn-ghost" onClick={() => window.nav && window.nav("/today")} style={{ height: 30, padding: "0 10px", fontSize: 11 }}>← exit</button>
+        {!isMobile && (
+          <span style={{ color: W.mutedDim, textTransform:"uppercase", letterSpacing:"0.14em" }}>
+            game: <span style={{color:"var(--accent)"}}>{title}</span> · round {round}
+          </span>
+        )}
         <span style={{ flex: 1 }}/>
-        <span style={{ color: W.muted, marginRight: 18 }}>score <span style={{ color:"var(--accent)", fontSize: 14 }}>{score}</span></span>
+        <span style={{ color: W.muted }}>score <span style={{ color:"var(--accent)", fontSize: 14 }}>{score}</span></span>
         <span style={{ color: W.muted }}>
           <Icons.flame style={{color: W.amber, verticalAlign:"middle"}}/> <span style={{ color: W.amber, fontSize: 14 }}>{streak}</span>
         </span>
+        <button className="w-btn w-btn-ghost"
+          onClick={() => window.nav && window.nav(next.path)}
+          title={`next game · ${next.label}`}
+          style={{ height: 30, padding: "0 12px", fontSize: 11 }}>
+          {isMobile ? "next →" : `next: ${next.label} →`}
+        </button>
       </div>
-      <div style={{ flex: 1, display:"flex", alignItems:"center", justifyContent:"center", padding: 32, flexDirection:"column" }}>
+      <div style={{ flex: 1, display:"flex", alignItems:"center", justifyContent:"center", padding: isMobile ? 20 : 32, flexDirection:"column" }}>
         {children}
       </div>
     </div>
