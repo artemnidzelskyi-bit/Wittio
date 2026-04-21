@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Wittio — Brain Training</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #0D120F; min-height: 100%; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  * { box-sizing: border-box; }
+  #root { min-height: 100vh; }
+  button:disabled { opacity: 0.4; cursor: not-allowed !important; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="theme.jsx"></script>
+<script type="text/babel" src="primitives.jsx"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="screens-onboarding-iq.jsx"></script>
+<script type="text/babel" src="screens-training-profile.jsx"></script>
+<script type="text/babel" src="screens-mobile.jsx"></script>
+
+<script type="text/babel">
+// ── Router ───────────────────────────────────────────────────
+function useHashRoute() {
+  const parse = () => {
+    const raw = window.location.hash.slice(1) || "/";
+    return raw.startsWith("/") ? raw : "/" + raw;
+  };
+  const [route, setRoute] = React.useState(parse());
+  React.useEffect(() => {
+    const onHash = () => setRoute(parse());
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+  return route;
+}
+
+window.nav = (path) => {
+  if (!path.startsWith("/")) path = "/" + path;
+  if (window.location.hash.slice(1) === path) return;
+  window.location.hash = path;
+  window.scrollTo(0, 0);
+};
+
+// ── IQ test questions ───────────────────────────────────────
+const QUESTIONS = [
+  {
+    id: "q1",
+    section: "pattern",
+    type: "matrix",
+    prompt: "Which shape completes the pattern?",
+    // 3x3 where each row and column contains triangle, circle, square exactly once.
+    // Row 1: △ ○ □ · Row 2: □ △ ○ · Row 3: ○ □ ?  → △
+    cells: ["triangle","circle","square","square","triangle","circle","circle","square","?"],
+    options: [
+      { id: "a", shape: "circle"   },
+      { id: "b", shape: "triangle" },
+      { id: "c", shape: "square"   },
+      { id: "d", shape: "diamond"  },
+    ],
+    correctId: "b",
+  },
+  {
+    id: "q2",
+    section: "logic",
+    type: "series",
+    prompt: "What comes next in the sequence?",
+    // 2, 6, 12, 20, 30, ? — differences 4, 6, 8, 10, 12 → 42
+    series: [2, 6, 12, 20, 30],
+    options: [
+      { id: "a", value: 36 },
+      { id: "b", value: 40 },
+      { id: "c", value: 42 },
+      { id: "d", value: 56 },
+    ],
+    correctId: "c",
+  },
+  {
+    id: "q3",
+    section: "verbal",
+    type: "analogy",
+    prompt: "Complete the analogy.",
+    left: "HAND", middle: "GLOVE", right: "FOOT",
+    options: [
+      { id: "a", word: "SHOE" },
+      { id: "b", word: "SOCK" },
+      { id: "c", word: "LEG"  },
+      { id: "d", word: "TOE"  },
+    ],
+    correctId: "a",
+  },
+];
+
+// ── Shell wrapper: sets CSS accent variables, background, noise ──
+function Shell({ children, accent = "#A8FF60" }) {
+  const rgb = (accentPresets[accent] && accentPresets[accent].rgb) || "168,255,96";
+  const style = {
+    minHeight: "100vh",
+    background: W.bg,
+    position: "relative",
+    "--accent": accent,
+    "--accent-line": `rgba(${rgb}, 0.35)`,
+    "--accent-bg":   `rgba(${rgb}, 0.08)`,
+    "--accent-glow": `rgba(${rgb}, 0.45)`,
+  };
+  return <div className="w-root w-noise" style={style}>{children}</div>;
+}
+
+// ── Landing ──────────────────────────────────────────────────
+function Landing() {
+  return (
+    <div className="w-grid-bg" style={{ minHeight:"100vh", display:"flex", flexDirection:"column" }}>
+      <header style={{ display:"flex", alignItems:"center", padding:"18px 40px", borderBottom:`1px solid ${W.line}` }}>
+        <div onClick={() => window.nav("/")} style={{ cursor:"pointer" }}>
+          <WittioLogo size={16}/>
+        </div>
+        <nav style={{ marginLeft: 48, display:"flex", gap: 28, fontFamily: W.mono, fontSize: 12.5, color: W.muted }}>
+          <span onClick={() => window.nav("/iq")}           style={{cursor:"pointer"}}>Take the IQ Test</span>
+          <span onClick={() => window.nav("/today")}        style={{cursor:"pointer"}}>Training</span>
+          <span onClick={() => window.nav("/games/memory")} style={{cursor:"pointer"}}>Games</span>
+          <span style={{cursor:"pointer"}}>Articles</span>
+          <span onClick={() => window.nav("/paywall")}      style={{cursor:"pointer"}}>Pricing</span>
+        </nav>
+        <span style={{ flex: 1 }}/>
+        <span className="w-mono" onClick={() => window.nav("/today")} style={{ fontSize: 12, color: W.muted, marginRight: 18, cursor:"pointer" }}>log in</span>
+        <button className="w-btn w-btn-primary" onClick={() => window.nav("/onboarding")} style={{ height: 36, padding: "0 16px", fontSize: 12 }}>start free →</button>
+      </header>
+
+      <div style={{ flex: 1, display:"grid", gridTemplateColumns:"1.1fr 1fr", gap: 0, minHeight: 0 }}>
+        <div style={{ padding: "60px 64px", display:"flex", flexDirection:"column", justifyContent:"center" }}>
+          <span className="w-chip w-chip-accent" style={{ width:"fit-content" }}>
+            <Icons.dot/> new · personality test available
+          </span>
+          <h1 className="w-serif" style={{ fontSize: 88, lineHeight: 0.98, fontWeight: 400, letterSpacing:"-0.03em", margin: "20px 0 18px" }}>
+            Train the<br/>
+            <span style={{ color:"var(--accent)", fontStyle:"italic" }}>smartest muscle</span><br/>
+            you own.
+          </h1>
+          <p style={{ color: W.muted, fontSize: 18, lineHeight: 1.5, maxWidth: 500, marginBottom: 28 }}>
+            Wittio is a brain gym. Take a real IQ assessment, train with short daily sessions,
+            and watch your mind get measurably sharper.
+          </p>
+          <div style={{ display:"flex", gap: 12, alignItems:"center" }}>
+            <button className="w-btn w-btn-primary" onClick={() => window.nav("/iq")}>take the iq test <Icons.arrow/></button>
+            <button className="w-btn w-btn-ghost"   onClick={() => window.nav("/onboarding")}>watch 60s demo</button>
+          </div>
+
+          <div style={{ display:"flex", gap: 24, marginTop: 40 }}>
+            <Metric label="members"     value="240K"/>
+            <Metric label="avg lift"    value="+14" unit="pts"/>
+            <Metric label="daily users" value="87%"/>
+          </div>
+        </div>
+
+        <div style={{ padding: 40, background: W.bgSunken, borderLeft: `1px solid ${W.line}`, position:"relative", display:"flex", alignItems:"center" }}>
+          <TerminalCard title="wittio/demo" accent="var(--accent)" style={{ width:"100%" }}>
+            <div style={{ padding: 24 }}>
+              <div className="w-mono" style={{ fontSize: 12, color: W.muted, lineHeight: 1.7 }}>
+                <div><span style={{color:"var(--accent)"}}>$</span> wittio assess --iq</div>
+                <div style={{color: W.mutedDim}}>› 3 questions · pattern · logic · verbal</div>
+                <div style={{color: W.mutedDim}}>› no timer · no sign-up</div>
+                <div style={{ marginTop: 8 }}>› <span style={{color: W.text}}>takes ~2 minutes</span></div>
+              </div>
+
+              <div style={{ marginTop: 22, padding: 18, border: `1px solid var(--accent)`, background: "var(--accent-bg)" }}>
+                <div style={{ display:"flex", alignItems:"baseline", gap: 10 }}>
+                  <span className="w-mono" style={{ fontSize: 46, fontWeight: 500, color:"var(--accent)", lineHeight: 1 }}>3</span>
+                  <span className="w-mono" style={{ fontSize: 12, color: W.muted }}>questions · one from each domain</span>
+                </div>
+                <div style={{ height: 4, background: W.bgSunken, marginTop: 10, position:"relative" }}>
+                  <div style={{ width: "100%", height: "100%", background: "var(--accent)" }}/>
+                </div>
+              </div>
+
+              <div style={{ marginTop: 20, display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap: 10 }}>
+                {[
+                  { k:"pattern", v:"q.1" },
+                  { k:"logic",   v:"q.2" },
+                  { k:"verbal",  v:"q.3" },
+                ].map(x => (
+                  <div key={x.k} style={{ border: `1px solid ${W.line}`, padding: 10 }}>
+                    <div className="w-mono" style={{ fontSize: 10, color: W.mutedDim, textTransform:"uppercase", letterSpacing:"0.1em" }}>{x.k}</div>
+                    <div className="w-mono" style={{ fontSize: 18, color: W.text, marginTop: 2 }}>{x.v}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ marginTop: 16, fontFamily: W.mono, fontSize: 11, color: W.mutedDim }}>
+                › ready? press <span onClick={() => window.nav("/iq")} style={{color:"var(--accent)", cursor:"pointer"}}>[enter]</span><span className="w-caret"/>
+              </div>
+            </div>
+          </TerminalCard>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Paywall ──────────────────────────────────────────────────
+function useCountdown(totalSeconds) {
+  const [remaining, setRemaining] = React.useState(totalSeconds);
+  React.useEffect(() => {
+    if (remaining <= 0) return;
+    const id = setInterval(() => setRemaining(r => Math.max(0, r - 1)), 1000);
+    return () => clearInterval(id);
+  }, [remaining]);
+  const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
+  const ss = String(remaining % 60).padStart(2, "0");
+  return { remaining, label: `${mm}:${ss}` };
+}
+
+function Paywall({ score, correct, total, onDone, onBack }) {
+  const countdown = useCountdown(10 * 60);
+  const discountActive = countdown.remaining > 0;
+  const [picked, setPicked] = React.useState("month");
+
+  const plans = [
+    {
+      id: "week",
+      name: "1-week trial",
+      priceDisc: 6.93,
+      priceFull: 13.86,
+      then: "then $39.98 / month",
+      tagline: "Try before committing",
+    },
+    {
+      id: "month",
+      name: "4-week trial",
+      priceDisc: 19.99,
+      priceFull: 39.98,
+      then: "then $39.98 / month",
+      tagline: "Most popular",
+      highlight: true,
+    },
+    {
+      id: "quarter",
+      name: "12-week trial",
+      priceDisc: 39.99,
+      priceFull: 79.98,
+      then: "then $79.98 / 3 months",
+      tagline: "Best value — 50% off",
+    },
+  ];
+
+  return (
+    <div className="w-grid-bg" style={{ minHeight:"100vh", display:"flex", flexDirection:"column" }}>
+      {/* Header */}
+      <header style={{ display:"flex", alignItems:"center", padding:"18px 40px", borderBottom:`1px solid ${W.line}` }}>
+        <div onClick={() => window.nav("/")} style={{ cursor:"pointer" }}><WittioLogo size={16}/></div>
+        <span style={{ flex: 1 }}/>
+        <button className="w-btn w-btn-ghost" onClick={onBack} style={{ height: 34, padding: "0 14px", fontSize: 11 }}>← back to results</button>
+      </header>
+
+      {/* Discount banner */}
+      {discountActive && (
+        <div style={{
+          padding: "10px 40px", background: W.bgSunken, borderBottom: `1px solid ${W.line}`,
+          display:"flex", alignItems:"center", gap: 16, fontFamily: W.mono, fontSize: 12,
+        }}>
+          <span style={{ color: W.amber, display:"flex", gap: 6, alignItems:"center" }}>
+            <Icons.flame style={{color: W.amber}}/>
+            <span style={{ textTransform:"uppercase", letterSpacing:"0.12em" }}>50% off expires in</span>
+          </span>
+          <span className="w-mono" style={{ color: W.amber, fontSize: 18, letterSpacing: "0.05em" }}>
+            {countdown.label}
+          </span>
+          <span style={{ color: W.mutedDim }}>· locked to this session · no extensions</span>
+        </div>
+      )}
+
+      <div style={{ flex: 1, padding: "48px 56px", maxWidth: 1280, width: "100%", margin: "0 auto" }}>
+        {/* Hero */}
+        <div style={{ textAlign:"center", marginBottom: 48 }}>
+          <span className="w-chip w-chip-accent">
+            <Icons.check/> your score · {score} · {correct}/{total} correct
+          </span>
+          <h1 className="w-serif" style={{ fontSize: 56, lineHeight: 1.05, margin: "20px auto 10px", fontWeight: 400, maxWidth: 820 }}>
+            Unlock your <span style={{ color:"var(--accent)", fontStyle:"italic" }}>full report</span> + daily training plan.
+          </h1>
+          <p style={{ color: W.muted, fontSize: 17, lineHeight: 1.5, maxWidth: 620, margin: "0 auto" }}>
+            Detailed section-by-section breakdown, personalized training, unlimited games,
+            and the full IQ-lift trajectory. Cancel anytime.
+          </p>
+        </div>
+
+        {/* Plans */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap: 20, marginBottom: 32 }}>
+          {plans.map(p => {
+            const on = picked === p.id;
+            return (
+              <button key={p.id} onClick={() => setPicked(p.id)}
+                style={{
+                  textAlign:"left", padding: 28, cursor:"pointer",
+                  border: `1px solid ${on ? "var(--accent)" : W.line}`,
+                  background: on ? "var(--accent-bg)" : W.bgRaised,
+                  boxShadow: on ? "0 0 0 1px var(--accent), 0 0 40px -10px var(--accent-glow)" : "none",
+                  position:"relative", color: W.text, fontFamily: W.sans,
+                  transition: "all .12s", minHeight: 280,
+                  display:"flex", flexDirection:"column",
+                }}>
+                {p.highlight && (
+                  <span className="w-mono" style={{
+                    position:"absolute", top: -10, left: 20, padding: "3px 10px",
+                    background: W.amber, color: "#0A0F0B", fontSize: 10,
+                    letterSpacing:"0.14em", textTransform:"uppercase",
+                  }}>most popular</span>
+                )}
+                <span className="w-mono" style={{ fontSize: 11, color: on ? "var(--accent)" : W.mutedDim, letterSpacing:"0.14em", textTransform:"uppercase" }}>
+                  {p.name}
+                </span>
+                <div style={{ marginTop: 14, marginBottom: 6, display:"flex", alignItems:"baseline", gap: 10, flexWrap:"wrap" }}>
+                  <span className="w-mono" style={{ fontSize: 42, color: W.text, letterSpacing:"-0.02em", lineHeight: 1 }}>
+                    ${discountActive ? p.priceDisc.toFixed(2) : p.priceFull.toFixed(2)}
+                  </span>
+                  {discountActive && (
+                    <span className="w-mono" style={{ fontSize: 16, color: W.mutedDim, textDecoration:"line-through" }}>
+                      ${p.priceFull.toFixed(2)}
+                    </span>
+                  )}
+                </div>
+                <div className="w-mono" style={{ fontSize: 12, color: W.muted }}>{p.then}</div>
+                <div style={{ flex: 1 }}/>
+                <div style={{ marginTop: 20, paddingTop: 14, borderTop: `1px dashed ${W.line}`, fontSize: 13, color: on ? W.text : W.muted }}>
+                  {p.tagline}
+                </div>
+                <div style={{
+                  marginTop: 16, display:"flex", alignItems:"center", gap: 8,
+                  color: on ? "var(--accent)" : W.mutedDim, fontFamily: W.mono, fontSize: 12,
+                  letterSpacing:"0.1em", textTransform:"uppercase",
+                }}>
+                  <span style={{
+                    width: 14, height: 14, borderRadius:"50%",
+                    border: `1px solid ${on ? "var(--accent)" : W.line}`,
+                    background: on ? "var(--accent)" : "transparent",
+                    display:"flex", alignItems:"center", justifyContent:"center",
+                  }}>
+                    {on && <span style={{width:6, height:6, borderRadius:"50%", background:"#0A0F0B"}}/>}
+                  </span>
+                  {on ? "selected" : "choose"}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* CTA + trust row */}
+        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap: 20 }}>
+          <button className="w-btn w-btn-primary" onClick={onDone}
+            style={{ height: 56, padding: "0 36px", fontSize: 14 }}>
+            start {plans.find(p => p.id === picked).name.toLowerCase()} — ${discountActive ? plans.find(p => p.id === picked).priceDisc.toFixed(2) : plans.find(p => p.id === picked).priceFull.toFixed(2)}
+            <Icons.arrow/>
+          </button>
+
+          <div style={{ display:"flex", gap: 24, flexWrap:"wrap", justifyContent:"center", color: W.mutedDim, fontSize: 12.5 }}>
+            <span style={{display:"flex", gap:6, alignItems:"center"}}><Icons.check/> cancel anytime</span>
+            <span style={{display:"flex", gap:6, alignItems:"center"}}><Icons.lock/> secure checkout</span>
+            <span style={{display:"flex", gap:6, alignItems:"center"}}><Icons.check/> 7-day refund</span>
+          </div>
+
+          <div className="w-mono" style={{ fontSize: 11, color: W.mutedDim, textAlign:"center", maxWidth: 520, lineHeight: 1.6, marginTop: 12 }}>
+            This is a demo paywall — no real payment processed.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Post-payment success
+function PaywallSuccess({ onContinue }) {
+  return (
+    <div style={{
+      minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center",
+      flexDirection:"column", gap: 24, padding: 40,
+    }}>
+      <div style={{
+        width: 88, height: 88, border: `1px solid var(--accent)`,
+        display:"flex", alignItems:"center", justifyContent:"center",
+        boxShadow: "0 0 0 1px var(--accent), 0 0 60px -10px var(--accent-glow)",
+      }}>
+        <span style={{ fontSize: 36, color:"var(--accent)" }}>✓</span>
+      </div>
+      <h1 className="w-serif" style={{ fontSize: 44, margin: 0, fontWeight: 400, textAlign:"center" }}>
+        You're in. Welcome to Wittio.
+      </h1>
+      <p style={{ color: W.muted, fontSize: 16, textAlign:"center", maxWidth: 480, margin: 0 }}>
+        Your full report and today's training plan are ready. We'll send a receipt to your email.
+      </p>
+      <button className="w-btn w-btn-primary" onClick={onContinue}>go to today's session <Icons.arrow/></button>
+    </div>
+  );
+}
+
+// ── 404 ──────────────────────────────────────────────────────
+function NotFound({ path }) {
+  return (
+    <div style={{
+      minHeight: "100vh", display:"flex", alignItems:"center", justifyContent:"center",
+      flexDirection:"column", gap: 20, color: W.muted,
+    }}>
+      <div className="w-mono" style={{ fontSize: 80, color: "var(--accent)" }}>404</div>
+      <div className="w-mono" style={{ fontSize: 14 }}>no route at <span style={{color: W.text}}>{path}</span></div>
+      <button className="w-btn w-btn-primary" onClick={() => window.nav("/")}>← home</button>
+    </div>
+  );
+}
+
+// ── App / Router ─────────────────────────────────────────────
+function App() {
+  const route = useHashRoute();
+  const [qIdx, setQIdx] = React.useState(0);
+  const [answers, setAnswers] = React.useState({}); // { q1: "b", q2: "c", ... }
+
+  const question = QUESTIONS[qIdx];
+  const total = QUESTIONS.length;
+
+  // Derived score
+  const correct = QUESTIONS.reduce((n, q) => n + (answers[q.id] === q.correctId ? 1 : 0), 0);
+  const score = 85 + correct * 15; // 85, 100, 115, 130
+  const breakdown = QUESTIONS.map(q => ({
+    section: q.section,
+    correct: answers[q.id] === q.correctId,
+  }));
+
+  // Handlers
+  const startIq = () => {
+    setQIdx(0);
+    setAnswers({});
+    window.nav("/iq/q");
+  };
+  const selectAnswer = (qId, optId) => {
+    setAnswers(a => ({ ...a, [qId]: optId }));
+  };
+  const nextQuestion = () => {
+    if (qIdx >= total - 1) {
+      window.nav("/iq/results");
+    } else {
+      setQIdx(qIdx + 1);
+    }
+  };
+  const prevQuestion = () => { if (qIdx > 0) setQIdx(qIdx - 1); };
+
+  let screen;
+  if (route === "/" || route === "") {
+    screen = <Landing/>;
+  } else if (route === "/onboarding") {
+    screen = <Onboarding step={2} onContinue={() => window.nav("/iq")} onSkip={() => window.nav("/iq")}/>;
+  } else if (route === "/iq") {
+    screen = <IQIntro onStart={startIq}/>;
+  } else if (route === "/iq/q") {
+    screen = <IQQuestion
+      question={question}
+      qNum={qIdx + 1}
+      total={total}
+      selected={answers[question.id] || null}
+      onSelect={(optId) => selectAnswer(question.id, optId)}
+      onNext={nextQuestion}
+      onPrev={prevQuestion}
+      onSkip={nextQuestion}
+    />;
+  } else if (route === "/iq/results") {
+    screen = <IQResults
+      score={score}
+      correct={correct}
+      total={total}
+      breakdown={breakdown}
+      onContinue={() => window.nav("/paywall")}
+      onRetake={startIq}
+    />;
+  } else if (route === "/paywall") {
+    screen = <Paywall
+      score={score}
+      correct={correct}
+      total={total}
+      onDone={() => window.nav("/paywall/success")}
+      onBack={() => window.nav("/iq/results")}
+    />;
+  } else if (route === "/paywall/success") {
+    screen = <PaywallSuccess onContinue={() => window.nav("/today")}/>;
+  } else if (route === "/today") {
+    screen = <AppShell active="today"><Today/></AppShell>;
+  } else if (route === "/profile") {
+    screen = <AppShell active="profile"><Profile/></AppShell>;
+  } else if (route === "/games" || route === "/games/") {
+    window.nav("/games/memory"); screen = null;
+  } else if (route === "/games/memory") {
+    screen = <GameMemoryGrid/>;
+  } else if (route === "/games/reaction") {
+    screen = <GameReactionTime/>;
+  } else if (route === "/games/words") {
+    screen = <GameWordChains/>;
+  } else {
+    screen = <NotFound path={route}/>;
+  }
+
+  return <Shell>{screen}</Shell>;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
