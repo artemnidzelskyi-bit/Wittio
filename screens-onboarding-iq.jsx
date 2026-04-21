@@ -143,22 +143,22 @@ function IQIntro({ onStart }) {
 
           <div>
             <span className="w-chip w-chip-accent">
-              <Icons.brain/> IQ assessment · 20 questions · ~18 min
+              <Icons.brain/> IQ assessment · 3 questions · ~2 min
             </span>
             <h1 className="w-serif" style={{ fontSize: isMobile ? 40 : 68, lineHeight: 1.02, margin: "22px 0 18px", fontWeight: 400, letterSpacing:"-0.02em" }}>
               Ready to meet <br/>
               <span style={{ fontStyle:"italic", color: "var(--accent)" }}>your</span> intelligence?
             </h1>
             <p style={{ color: W.muted, fontSize: 17, lineHeight: 1.55, maxWidth: 460, marginBottom: 32 }}>
-              A calibrated mix of pattern, logic, and language questions.
-              No timer anxiety — just take each one at your pace. Results are private.
+              One question from each cognitive domain — pattern, logic, verbal.
+              No timer — just take each at your pace. Results are private.
             </p>
 
             <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap: 1, background: W.line, border: `1px solid ${W.line}`, marginBottom: 32, maxWidth: 460 }}>
               {[
-                { k:"questions", v:"20" },
-                { k:"duration",  v:"~18m" },
-                { k:"sections",  v:"04" },
+                { k:"questions", v:"3" },
+                { k:"duration",  v:"~2m" },
+                { k:"sections",  v:"03" },
               ].map(x => (
                 <div key={x.k} style={{ background: W.bgRaised, padding: "14px 16px" }}>
                   <div className="w-mono" style={{ fontSize: 10, color: W.mutedDim, textTransform:"uppercase", letterSpacing:"0.12em" }}>{x.k}</div>
@@ -171,49 +171,73 @@ function IQIntro({ onStart }) {
               <button className="w-btn w-btn-primary" onClick={onStart}>start assessment <Icons.arrow/></button>
             </div>
 
-            <div style={{ marginTop: 28, display:"flex", gap: 20, color: W.mutedDim, fontSize: 12.5 }}>
-              <span style={{display:"flex", gap:6, alignItems:"center"}}><Icons.check/> pause anytime</span>
+            <div style={{ marginTop: 28, display:"flex", gap: 20, color: W.mutedDim, fontSize: 12.5, flexWrap:"wrap" }}>
+              <span style={{display:"flex", gap:6, alignItems:"center"}}><Icons.check/> no timer</span>
               <span style={{display:"flex", gap:6, alignItems:"center"}}><Icons.check/> results in seconds</span>
               <span style={{display:"flex", gap:6, alignItems:"center"}}><Icons.lock/> fully private</span>
             </div>
           </div>
 
-          {/* right: stylized brain illustration via terminal output */}
-          <TerminalCard title="iq_test/preview" accent="var(--accent)">
-            <div style={{ padding: 28, position:"relative" }}>
-              <div className="w-scanline"/>
-              <div className="w-mono" style={{ color: W.muted, fontSize: 12, lineHeight: 1.6 }}>
-                <div style={{color:"var(--accent)"}}>$ wittio iq --start</div>
-                <div>› loading question bank...............<span style={{color:"var(--accent)"}}>ok</span></div>
-                <div>› calibrating difficulty..............<span style={{color:"var(--accent)"}}>ok</span></div>
-                <div>› 4 sections queued: pattern, logic, verbal, spatial</div>
-                <div style={{marginTop:12, color: W.mutedDim}}>sections:</div>
-                {[
-                  { n:"01", label:"pattern",  q:"05" },
-                  { n:"02", label:"logic",    q:"05" },
-                  { n:"03", label:"verbal",   q:"05" },
-                  { n:"04", label:"spatial",  q:"05" },
-                ].map(s => (
-                  <div key={s.n} style={{ display:"flex", gap: 12, padding: "4px 0" }}>
-                    <span style={{color: W.mutedDim}}>[{s.n}]</span>
-                    <span style={{ flex:1, color: W.text }}>{s.label}</span>
-                    <span style={{color: W.muted}}>{s.q} q</span>
-                  </div>
-                ))}
-                <div style={{ marginTop: 14 }}>› press <span style={{color:"var(--accent)"}}>[start]</span> when ready<span className="w-caret"/></div>
-              </div>
+          {/* right: visual preview of the 3 section types */}
+          <div style={{ border: `1px solid ${W.line}`, background: W.bgRaised, padding: 24, position:"relative" }}>
+            <div className="w-mono" style={{ fontSize: 10.5, color: W.mutedDim, textTransform:"uppercase", letterSpacing:"0.14em", marginBottom: 18 }}>
+              what you'll see
+            </div>
 
-              <div style={{ marginTop: 28, padding: 20, border: `1px dashed ${W.line}`, display:"flex", alignItems:"center", gap: 16 }}>
-                <div style={{ width: 44, height: 44, borderRadius:"50%", background: W.bgSunken, border: `1px solid ${W.line}`, display:"flex", alignItems:"center", justifyContent:"center", color:"var(--accent)" }}>
-                  <Icons.brain/>
+            {/* Section 01 · Pattern */}
+            <div style={{ display:"flex", alignItems:"center", gap: 16, padding: "12px 0", borderTop: `1px solid ${W.line}` }}>
+              <div style={{ width: 64, height: 64, border: `1px solid ${W.line}`, background: W.bgSunken, display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gridTemplateRows:"repeat(3, 1fr)", gap: 2, padding: 6 }}>
+                {["△","○","□","□","△","○","○","□","?"].map((c, i) => (
+                  <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"center",
+                    fontFamily: W.mono, fontSize: 12, color: c === "?" ? "var(--accent)" : W.muted,
+                    border: c === "?" ? `1px dashed var(--accent)` : "none" }}>{c}</div>
+                ))}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div className="w-mono" style={{ fontSize: 10.5, color: W.mutedDim, textTransform:"uppercase", letterSpacing:"0.12em" }}>
+                  01 · pattern
                 </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 500 }}>Your score stays private</div>
-                  <div style={{ fontSize: 12, color: W.muted, marginTop: 2 }}>Never shown on a leaderboard. Never sold.</div>
-                </div>
+                <div style={{ fontSize: 14.5, color: W.text, marginTop: 4 }}>Complete the visual matrix</div>
               </div>
             </div>
-          </TerminalCard>
+
+            {/* Section 02 · Logic */}
+            <div style={{ display:"flex", alignItems:"center", gap: 16, padding: "12px 0", borderTop: `1px solid ${W.line}` }}>
+              <div style={{ width: 64, height: 64, border: `1px solid ${W.line}`, background: W.bgSunken, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <span className="w-mono" style={{ fontSize: 14, color: W.muted }}>2,6,<span style={{color:"var(--accent)"}}>?</span></span>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div className="w-mono" style={{ fontSize: 10.5, color: W.mutedDim, textTransform:"uppercase", letterSpacing:"0.12em" }}>
+                  02 · logic
+                </div>
+                <div style={{ fontSize: 14.5, color: W.text, marginTop: 4 }}>Find the next number in a sequence</div>
+              </div>
+            </div>
+
+            {/* Section 03 · Verbal */}
+            <div style={{ display:"flex", alignItems:"center", gap: 16, padding: "12px 0", borderTop: `1px solid ${W.line}` }}>
+              <div style={{ width: 64, height: 64, border: `1px solid ${W.line}`, background: W.bgSunken, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap: 2 }}>
+                <span className="w-mono" style={{ fontSize: 10, color: W.muted, letterSpacing:"0.08em" }}>A : B</span>
+                <span className="w-mono" style={{ fontSize: 10, color:"var(--accent)", letterSpacing:"0.08em" }}>C : ?</span>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div className="w-mono" style={{ fontSize: 10.5, color: W.mutedDim, textTransform:"uppercase", letterSpacing:"0.12em" }}>
+                  03 · verbal
+                </div>
+                <div style={{ fontSize: 14.5, color: W.text, marginTop: 4 }}>Complete the word analogy</div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: 20, padding: 16, border: `1px dashed ${W.line}`, display:"flex", alignItems:"center", gap: 14 }}>
+              <div style={{ width: 36, height: 36, borderRadius:"50%", background: W.bgSunken, border: `1px solid ${W.line}`, display:"flex", alignItems:"center", justifyContent:"center", color:"var(--accent)" }}>
+                <Icons.lock/>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 500 }}>Your score stays private</div>
+                <div style={{ fontSize: 12, color: W.muted, marginTop: 2 }}>Never shown on a leaderboard. Never sold.</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
